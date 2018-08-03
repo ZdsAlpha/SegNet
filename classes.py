@@ -8,6 +8,8 @@ def loadClasses(file="CamVid/label_colors.txt"):
     data = open(file, 'r').read()
     lines = data.split('\n')
     for line in lines:
+        if line == "":
+            continue
         line = line.replace("		","\t")
         rgb,name = line.split('\t')
         r,g,b = rgb.split(' ')

@@ -2,3 +2,6 @@
 temp.py
 #CamVid Dataset
 CamVid
+Dataset
+#Pytorch
+__pycache__
