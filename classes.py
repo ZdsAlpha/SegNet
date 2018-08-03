@@ -1,6 +1,9 @@
 import numpy as np
 
 def getClasses(file="CamVid/label_colors.txt"):
+    return bgr_numpy(loadClasses(file))
+
+def loadClasses(file="CamVid/label_colors.txt"):
     classes = []
     data = open(file, 'r').read()
     lines = data.split('\n')
