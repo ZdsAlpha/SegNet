@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument('-model',type=str,default='segnet.model',help='path of segnet model')
     parser.add_argument('-epochs',type=int,default=50,help='number of epochs')
     parser.add_argument('-batch',type=int,default=4,help='batch size')
-    parser.add_argument('-lr',type=float,default=0.0001,help='learning rate')
+    parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
     args = parser.parse_args()
 
     dataset = SegNetLoader(args.images,args.masks)
