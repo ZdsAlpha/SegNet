@@ -19,6 +19,9 @@ class SegNet(nn.Module):
             if i == 0:
                 encoder = self.createEncoderLayer(in_channels,self.calculateFilters(i),kernel_size,padding,layers)
                 decoder = self.createDecoderLayer(self.calculateFilters(i),out_channels,kernel_size,padding,layers,nn.Softmax2d())
+            elif i == depth - 1:
+                encoder = self.createEncoderLayer(self.calculateFilters(i-1),self.calculateFilters(i-1),kernel_size,padding,layers)
+                decoder = self.createDecoderLayer(self.calculateFilters(i-1),self.calculateFilters(i-1),kernel_size,padding,layers)
             else:
                 encoder = self.createEncoderLayer(self.calculateFilters(i-1),self.calculateFilters(i),kernel_size,padding,layers)
                 decoder = self.createDecoderLayer(self.calculateFilters(i),self.calculateFilters(i-1),kernel_size,padding,layers)

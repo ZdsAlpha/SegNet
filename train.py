@@ -14,6 +14,7 @@ def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,callback=Non
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+            del images,labels,output
         if callback is not None:
-            callback(epoch,total_loss,output)
+            callback(epoch,total_loss)
     return loss_sum / epochs
