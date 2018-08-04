@@ -1,7 +1,9 @@
 #Temp file
 temp.py
+segnet.model
 #CamVid Dataset
 CamVid
 Dataset
+Output
 #Pytorch
 __pycache__

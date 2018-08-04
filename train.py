@@ -48,7 +48,7 @@ if __name__ == "__main__":
     classes = getClasses(args.classes)
     model = SegNet(3,len(classes),args.depth,args.filters).to(args.device)
     if os.path.isfile(args.model):
-        model.load_state_dict(torch.load(args.model))
+        torch.load(args.model)
         print("Model loaded!")
     else:
         model.initialize()
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         print("Epoch #" + str(epoch) + " Test Loss: " + str(loss))
         if loss < min_loss:
             print("Saving model...")
-            torch.save(model.state_dict(),args.model)
+            torch.save(model,args.model)
             print("Model saved!")
             min_loss = loss
 
