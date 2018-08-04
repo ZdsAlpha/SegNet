@@ -38,7 +38,7 @@ class DatasetSelector(Dataset):
         return len(self.ids)
 
     def __getitem__(self,index):
-        return self.dataset[self.ids[index]]
+        return self.dataset.__getitem__(self.ids[index])
 
 def divide_dataset(dataset,ratio=0.7,seed=0,shuffle=False):
     ids = list(range(len(dataset)))
