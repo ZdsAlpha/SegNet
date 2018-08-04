@@ -46,5 +46,5 @@ def divide_dataset(dataset,ratio=0.7,seed=0,shuffle=False):
         random.seed(seed)
         random.shuffle(ids)
     first = ids[:math.floor((len(dataset)-1)*ratio)]
-    second = ids[len(first)-1:]
+    second = ids[len(first):]
     return (DatasetSelector(dataset,first),DatasetSelector(dataset,second))
