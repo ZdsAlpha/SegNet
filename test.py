@@ -12,4 +12,5 @@ def test(model,dataloader,criterion,device=None,callback=None):
             total_loss += loss.item()
             if callback is not None:
                 callback(output,loss)
+    return total_loss
 
