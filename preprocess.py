@@ -31,16 +31,14 @@ def LoadCamVid(path):
     files = os.listdir(path)
     imgfiles = []
     lblfiles = []
-    i = 0
-    for f in range(len(files)):
-        if '.png' in files[f]:
-            if f % 2 == 0:
-                imgfiles.append(os.path.join(path,files[i]))
+    for f in files:
+        if ".png" in f:
+            if "_L" in f:
+                lblfiles.append(os.path.join(path,f))
             else:
-                lblfiles.append(os.path.join(path,files[i]))
-            i += 1
+                imgfiles.append(os.path.join(path,f))
     assert len(imgfiles) == len(lblfiles)
-    return imgfiles,lblfiles
+    return sorted(imgfiles),sorted(lblfiles)
 
 if __name__ == "__main__":
     import argparse

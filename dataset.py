@@ -13,6 +13,8 @@ class SegNetLoader(Dataset):
         self.labels_dir = labels_dir
         images = glob.glob(os.path.join(images_dir,"*.png"))
         labels = glob.glob(os.path.join(labels_dir,"*.npy"))
+        images.sort()
+        labels.sort()
         assert len(images) == len(labels)
         self.images = images
         self.labels = labels
