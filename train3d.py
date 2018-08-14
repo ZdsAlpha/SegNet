@@ -23,9 +23,9 @@ if __name__ == "__main__":
     import argparse
     import os
     from test import test
-    from dataset import SegNetLoader,divide_dataset
+    from dataset import SegNetLoader,SegNetLoader3D,divide_dataset
     from classes import getClasses
-    from model import SegNet
+    from model import SegNet3D
     from torch.utils.data import DataLoader
 
     parser = argparse.ArgumentParser()
@@ -35,24 +35,26 @@ if __name__ == "__main__":
     parser.add_argument('-seed',type=int,default=1,help='seed for dividing dataset')
     parser.add_argument('-classes',type=str,default='CamVid/label_colors.txt',help='classes file')
     parser.add_argument('-device',type=int,default=0,help='device id')
-    parser.add_argument('-depth',type=int,default=3,help='depth of segnet model')
+    parser.add_argument('-depth',type=int,default=2,help='depth of segnet model')
     parser.add_argument('-filters',type=int,default=32,help='number of filters in first layer')
-    parser.add_argument('-model',type=str,default='segnet.model',help='path of segnet model')
+    parser.add_argument('-model',type=str,default='segnet3d.model',help='path of segnet model')
     parser.add_argument('-epochs',type=int,default=50,help='number of epochs')
-    parser.add_argument('-batch',type=int,default=4,help='batch size')
+    parser.add_argument('-batch',type=int,default=1,help='batch size')
+    parser.add_argument('-frames',type=int,default=4,help='number of frames')
     parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
     args = parser.parse_args()
 
-    dataset = SegNetLoader(args.images,args.masks)
+    dataset = SegNetLoader3D(args.images,args.masks,args.frames)
     train_dataset,test_dataset = divide_dataset(dataset,args.ratio,args.seed,True)
     classes = getClasses(args.classes)
     if os.path.isfile(args.model):
         model = torch.load(args.model).to(args.device)
         print("Model loaded!")
     else:
-        model = SegNet(3,len(classes),args.depth,args.filters).to(args.device)
+        model = SegNet3D(3,len(classes),args.frames,args.depth,args.filters).to(args.device)
         model.initialize()
         print("Model initialized!")
+    print(model)
     train_loader = DataLoader(train_dataset,args.batch,True,num_workers=4)
     test_loader = DataLoader(test_dataset,args.batch,False,num_workers=4)
     criterion = torch.nn.CrossEntropyLoss().to(args.device)

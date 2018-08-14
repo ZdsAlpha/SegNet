@@ -31,6 +31,40 @@ class SegNetLoader(Dataset):
         image = np.transpose(image,(2,0,1))
         return (torch.FloatTensor(image),torch.LongTensor(label))
 
+class SegNetLoader3D(Dataset):
+    def __init__(self,images_dir,labels_dir,frames=4):
+        self.images_dir = images_dir
+        self.labels_dir = labels_dir
+        self.frames = frames
+        images = glob.glob(os.path.join(images_dir,"*.png"))
+        labels = glob.glob(os.path.join(labels_dir,"*.npy"))
+        images.sort()
+        labels.sort()
+        assert len(images) == len(labels)
+        self.images = images
+        self.labels = labels
+
+    def fetch(self,index):
+        image_name = self.images[index]
+        label_name = self.labels[index]
+        image = cv.imread(image_name,cv.IMREAD_COLOR)
+        label = np.load(label_name)
+        image = image / 255.0
+        image = np.transpose(image,(2,0,1))
+        return image,label
+
+    def __len__(self):
+        return len(self.images) - self.frames + 1
+    
+    def __getitem__(self,index):
+        images = []
+        labels = []
+        for i in range(index,index+self.frames):
+            image,label = self.fetch(i)
+            images.append(image)
+            labels.append(label)
+        return torch.FloatTensor(np.stack(images,axis=1)),torch.LongTensor(np.stack(labels,axis=0))
+
 class DatasetSelector(Dataset):
     def __init__(self,dataset,ids):
         self.ids = ids
