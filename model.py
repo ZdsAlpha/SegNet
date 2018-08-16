@@ -180,7 +180,8 @@ class SegNet3D(nn.Module):
             elif i == convLayers-1:
                 layer.extend([
                     nn.ConvTranspose3d(input_filters,output_filters,kernel_size,padding=padding),
-                    nn.BatchNorm3d(output_filters)
+                    nn.BatchNorm3d(output_filters),
+                    nn.Softmax(dim=1)
                 ])
             else:
                 layer.extend([
@@ -195,7 +196,7 @@ class SegNet3D(nn.Module):
         sizes = []
         for encoder in self.encoders:
             sizes.append(x.size())
-            x,ind = F.max_pool3d(encoder(x),2,2,return_indices=True)
+            x,ind = F.max_pool3d(encoder(x),(1,2,2),(1,2,2),return_indices=True)
             indices.append(ind)
         return (x,indices,sizes)
 
@@ -204,8 +205,7 @@ class SegNet3D(nn.Module):
         for decoder in self.decoders:
             size = sizes.pop(len(indices)-1)
             ind = indices.pop(len(indices)-1)
-            x = decoder(F.max_unpool3d(x,ind,2,2,output_size=size))
-        x = F.softmax(x,dim=1)
+            x = decoder(F.max_unpool3d(x,ind,(1,2,2),(1,2,2),output_size=size))
         return x
 
     def forward(self,x):
@@ -217,4 +217,4 @@ class SegNet3D(nn.Module):
                 for i in range(len(layer)):
                     if i%3==0:
                         nn.init.xavier_normal_(layer[i].weight)
-   
+
