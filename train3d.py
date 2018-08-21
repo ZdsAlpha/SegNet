@@ -22,6 +22,7 @@ def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,callback=Non
 if __name__ == "__main__":
     import argparse
     import os
+    import numpy as np
     from test import test
     from dataset import SegNetLoader,SegNetLoader3D,divide_dataset
     from classes import getClasses
@@ -31,15 +32,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-images',type=str,default='Dataset/Images/',help='images directory')
     parser.add_argument('-masks',type=str,default='Dataset/Masks/',help='masks directory')
-    parser.add_argument('-ratio',type=float,default=0.8,help='ratio between train and test dataset')
+    parser.add_argument('-ratio',type=float,default=0.7,help='ratio between train and test dataset')
     parser.add_argument('-seed',type=int,default=1,help='seed for dividing dataset')
     parser.add_argument('-classes',type=str,default='CamVid/label_colors.txt',help='classes file')
+    parser.add_argument('-weights',type=str,default='Dataset/weights.npy',help='weights for cross-entropy loss')
     parser.add_argument('-device',type=int,default=0,help='device id')
     parser.add_argument('-depth',type=int,default=3,help='depth of segnet model')
-    parser.add_argument('-filters',type=int,default=32,help='number of filters in first layer')
+    parser.add_argument('-filters',type=int,default=8,help='number of filters in first layer')
     parser.add_argument('-model',type=str,default='segnet3d.model',help='path of segnet model')
     parser.add_argument('-epochs',type=int,default=50,help='number of epochs')
-    parser.add_argument('-batch',type=int,default=1,help='batch size')
+    parser.add_argument('-batch',type=int,default=2,help='batch size')
     parser.add_argument('-frames',type=int,default=4,help='number of frames')
     parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
     args = parser.parse_args()
@@ -54,9 +56,17 @@ if __name__ == "__main__":
         model = SegNet3D(3,len(classes),args.frames,args.depth,args.filters).to(args.device)
         model.initialize()
         print("Model initialized!")
+    print(model)
     train_loader = DataLoader(train_dataset,args.batch,True,num_workers=4)
     test_loader = DataLoader(test_dataset,args.batch,False,num_workers=4)
-    criterion = torch.nn.CrossEntropyLoss().to(args.device)
+    weights = None
+    if os.path.exists(args.weights):
+        weights = np.load(args.weights)
+    if weights is None:
+        criterion = torch.nn.CrossEntropyLoss().to(args.device)
+    else:
+        weights = torch.FloatTensor(weights).to(args.device)
+        criterion = torch.nn.CrossEntropyLoss(weight=weights).to(args.device)
     optimizer = torch.optim.Adam(model.parameters(),args.lr)
     print("Training model...")
     

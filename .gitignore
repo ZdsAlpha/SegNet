@@ -1,10 +1,16 @@
 #Temp file
 temp.py
-segnet.model
+Temp
 #CamVid Dataset
 CamVid
 Dataset
 Output
 #Pytorch
 __pycache__
+#Model files
 *.model
+#Temp Files/Dirs
+_Dataset
+Images
+Masks
+labels.txt
