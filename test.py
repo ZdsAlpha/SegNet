@@ -30,14 +30,14 @@ if __name__ == "__main__":
     import cv2 as cv
     from dataset import SegNetLoader
     from classes import getClasses
-    from model import SegNet
+    from model import SegNet,UNet
     from torch.utils.data import DataLoader
     from conversion import image_to_matrix,matrix_to_image
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-images',type=str,default='Dataset/Images/',help='images directory')
     parser.add_argument('-masks',type=str,default='Dataset/Masks/',help='masks directory')
-    parser.add_argument('-classes',type=str,default='CamVid/label_colors.txt',help='classes file')
+    parser.add_argument('-classes',type=str,default='labels.txt',help='classes file')
     parser.add_argument('-device',type=int,default=0,help='device id')
     parser.add_argument('-model',type=str,default='segnet.model',help='path of segnet model')
     parser.add_argument('-batch',type=int,default=4,help='batch size')
