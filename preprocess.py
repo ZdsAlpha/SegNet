@@ -1,60 +1,58 @@
-import os
-import numpy as np
-import cv2 as cv
-from conversion import weihgted_image_to_matrix
-
-def Convert(images,labels,classes,img_output_dir,lbl_output_dir,plbl_output_dir,weights_output,FX=0.5,FY=0.5):
-    assert len(images) == len(labels)
-    count = len(images)
-    weights = np.zeros((len(classes)),dtype=np.float)
-    for i in range(count):
-        imagename = images[i]
-        labelname = labels[i]
-        #Processing image
-        image = cv.imread(imagename,cv.IMREAD_COLOR)
-        if FX != 1 or FY != 1:
-            image = cv.resize(image,(0,0),fx=FX,fy=FY,interpolation = cv.INTER_NEAREST)
-        outputname = os.path.join(img_output_dir,str(i).rjust(4,'0')+'.png')
-        cv.imwrite(outputname,image)
-        #Processing label
-        label = cv.imread(labelname,cv.IMREAD_COLOR)
-        if FX != 1 or FY != 1:
-            label = cv.resize(label,(0,0),fx=FX,fy=FY,interpolation = cv.INTER_NEAREST)
-        outputname = os.path.join(lbl_output_dir,str(i).rjust(4,'0')+'.png')
-        cv.imwrite(outputname,label)
-        #Labels to numpy
-        matrix, _weights = weihgted_image_to_matrix(label,classes)
-        outputname = os.path.join(plbl_output_dir,str(i).rjust(4,'0')+'.npy')
-        np.save(outputname,matrix)
-        weights += _weights 
-        print("Processed " + str(i+1) + " out of " + str(count))
-    print(weights)
-    np.save(weights_output,weights)
-
 if __name__ == "__main__":
+    import os
+    import numpy as np
+    import cv2 as cv
+    import torch
     import argparse
-    from classes import getClasses
+    from functions import getClasses,images_to_matrices,matrices_to_images
+    from Loaders.ImagesLoader import ImagesLoader
+    from Loaders.ImageResizer import ImageResizer
+    from Loaders.ToTensor import ToByteTensor
+    from Loaders.functions import concat_loaders
+    from torch.utils.data import DataLoader
     parser = argparse.ArgumentParser()
-    parser.add_argument('-in_images',type=str,default='Images/',help='input images directory')
-    parser.add_argument('-in_masks',type=str,default='Masks/',help='input masks directory')
-    parser.add_argument('-classes',type=str,default='labels.txt',help='classes file')
-    parser.add_argument('-images',type=str,default='Dataset/Images/',help='images path')
-    parser.add_argument('-masks',type=str,default='Dataset/Masks/',help='masks path')
-    parser.add_argument('-labels',type=str,default='Dataset/vLabels/',help='labels path')
-    parser.add_argument('-weights',type=str,default='Dataset/weights.npy',help='weights of each class')
+    parser.add_argument('-in_images',type=str,default='Contents/Images/',help='input images directory')
+    parser.add_argument('-in_masks',type=str,default='Contents/Masks/',help='input masks directory')
+    parser.add_argument('-classes',type=str,default='Contents/labels.txt',help='classes file')
+    parser.add_argument('-batch',type=int,default=64,help='batch size')
+    parser.add_argument('-device',type=int,default=0,help='device')
+    parser.add_argument('-images',type=str,default='Contents/Dataset/Images/',help='images path')
+    parser.add_argument('-masks',type=str,default='Contents/Dataset/Masks/',help='masks path')
+    parser.add_argument('-labels',type=str,default='Contents/Dataset/vLabels/',help='labels path')
+    parser.add_argument('-weights',type=str,default='Contents/Dataset/weights.npy',help='weights of each class')
     parser.add_argument('-fx',type=float,default=0.5,help='output size in x axis')
     parser.add_argument('-fy',type=float,default=0.5,help='output size in y axis')
     args = parser.parse_args()
-
-    images,labels = sorted(os.listdir(args.in_images)),sorted(os.listdir(args.in_masks))
-    for i in range(len(images)):
-        images[i] = os.path.join(args.in_images,images[i])
-        labels[i] = os.path.join(args.in_masks,labels[i])
-
-    assert len(images) == len(labels)
-    classes = getClasses(args.classes)
     for directory in [args.images,args.masks,args.labels]:
         if not os.path.exists(directory):
             os.makedirs(directory)
-    Convert(images,labels,classes,args.images,args.labels,args.masks,args.weights,args.fx,args.fy)
+    images_loader = ImagesLoader(args.in_images)
+    images_loader = ImageResizer(images_loader,args.fx,args.fy)
+    #images_loader = ToByteTensor(images_loader,args.device)
+    masks_loader = ImagesLoader(args.in_masks)
+    masks_loader = ImageResizer(masks_loader,args.fx,args.fy)
+    #masks_loader = ToByteTensor(masks_loader,args.device)
+    loader = concat_loaders(images_loader,masks_loader)
+    classes = getClasses(args.classes)
+    batch_loader = DataLoader(loader,args.batch,True,num_workers=4)
+    weights = np.zeros(len(classes))
+    index = 0
+    for images,masks in batch_loader:
+        images,masks = torch.ByteTensor(images).to(args.device),torch.ByteTensor(masks).to(args.device)
+        matrices,weightses = images_to_matrices(masks,classes,args.device)
+        masks = matrices_to_images(matrices,classes,args.device)
+        for _weights in weightses:
+            weights += _weights
+        for i in range(len(images)):
+            outputname = os.path.join(args.images,str(index).rjust(4,'0')+'.png')
+            cv.imwrite(outputname,images[i].cpu().numpy())
+            outputname = os.path.join(args.masks,str(index).rjust(4,'0')+'.npy')
+            np.save(outputname,matrices[i].cpu().numpy())
+            outputname = os.path.join(args.labels,str(index).rjust(4,'0')+'.png')
+            cv.imwrite(outputname,masks[i].cpu().numpy())
+            index += 1
+            print("Processed " + str(index) + " out of " + str(len(loader)))
+    print(weights)
+    np.save(args.weights,weights)
+    
     

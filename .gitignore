@@ -1,16 +1,9 @@
-#Temp file
-temp.py
-Temp
-#CamVid Dataset
-CamVid
-Dataset
+#Directories
+Contents
 Output
 #Pytorch
 __pycache__
 #Model files
 *.model
 #Temp Files/Dirs
-_Dataset
-Images
-Masks
-labels.txt
+_*
