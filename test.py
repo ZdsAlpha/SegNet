@@ -1,10 +1,18 @@
 import torch
 
-def test(model,dataloader,criterion,device=None,callback=None):
+def test(model,dataloader,criterion,device=None,callback=None,images_type=torch.FloatTensor,labels_type=torch.LongTensor):
     total_loss = 0
     model.eval()
     with torch.no_grad():
         for images,labels in dataloader:
+            if not torch.is_tensor(images):
+                images = images_type(images)
+            else:
+                images = images.type(images_type)
+            if not torch.is_tensor(labels):
+                labels = labels_type(labels)
+            else:
+                labels = labels.type(labels_type)
             if device is not None:
                 images,labels = images.to(device),labels.to(device)
             output = model(images)
@@ -14,12 +22,16 @@ def test(model,dataloader,criterion,device=None,callback=None):
                 callback(output,loss)
     return total_loss
 
-def run(model,dataloader,device=None,callback=None):
+def eval(model,dataloader,device=None,callback=None,images_type=torch.FloatTensor,labels_type=torch.LongTensor):
     model.eval()
     with torch.no_grad():
-        for images,labels in dataloader:
+        for images in dataloader:
+            if not torch.is_tensor(images):
+                images = images_type(images)
+            else:
+                images = images.type(images_type)
             if device is not None:
-                images,labels = images.to(device),labels.to(device)
+                images = images.to(device)
             output = model(images)
             if callback is not None:
                 callback(output)

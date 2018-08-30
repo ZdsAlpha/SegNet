@@ -1,5 +1,5 @@
 import numpy as np
-from functions import GetFiles
+from Loaders.functions import GetFiles
 from torch.utils.data import Dataset
 
 class NumpyLoader(Dataset):

@@ -6,12 +6,12 @@ class ImageConverter(Dataset):
         self.loader = images_loader
 
     def __len__(self):
-        return self.__len__()
+        return len(self.loader)
 
     def __getitem__(self,index):
-        image = self.__getitem__(index)
+        image = self.loader.__getitem__(index)
         image = image / 255.0
         indices = list(range(len(image.shape)))
-        indices = indices[-1]+indices[:-1]
+        indices = [indices[-1]]+indices[:-1]
         image = np.transpose(image,indices)
         return image

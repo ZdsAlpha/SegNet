@@ -35,7 +35,7 @@ def image_to_matrix(image_tensor,classes,device=0):
             for channel in range(len(channels)):
                 comparison = torch.eq(channels[channel],float(color_values[channel]))
                 indices = torch.mul(indices,comparison)
-            weights[class_id] += torch.sum(indices)
+            weights[class_id] = torch.sum(indices).cpu().numpy().item()
             values = torch.mul(indices,class_id)
             output_tensor = output_tensor + values.to(torch.int64)
         return output_tensor,np.asarray(weights)
@@ -54,10 +54,10 @@ def images_to_matrices(images_tensor,classes,device=0):
             for channel in range(len(channels)):
                 comparison = torch.eq(channels[channel],float(color_values[channel]))
                 indices = torch.mul(indices,comparison)
-            weights[class_id] += torch.sum(indices)
+            weights[class_id] = torch.sum(indices).cpu().numpy().item()
             values = torch.mul(indices,class_id)
             output_tensor = output_tensor + values.to(torch.int64)
-        return output_tensor,np.asarray(weights)
+        return output_tensor,np.asarray(weights) / float(batch_size)
 
 
 def matrix_to_image(matrix_tensor,classes,device=0):
