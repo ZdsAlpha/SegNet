@@ -1,4 +1,5 @@
 import torch
+import sys
 import numpy as np
 
 def getRawClasses(file):
@@ -91,3 +92,7 @@ def matrices_to_images(matrices_tensor,classes,device=0):
                 channel_tensor = channel_tensor + values
             channels[channel] = channel_tensor
         return torch.stack(channels,dim=3)
+
+def loadingBar(count=0,total=100,size=1):
+    percent = float(count)/float(total)*100
+    sys.stdout.write("\r" + str(int(count)).rjust(3,'0')+"/"+str(int(total)).rjust(3,'0') + ' [' + '='*int(percent/4)*size + ' '*(25-int(percent/4))*size + ']')

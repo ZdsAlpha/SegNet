@@ -20,15 +20,15 @@ if __name__ == '__main__':
     parser.add_argument('-masks',type=str,default='Contents/Dataset/Masks/',help='masks directory')
     parser.add_argument('-classes',type=str,default='Contents/Dataset/classes.txt',help='classes file')
     parser.add_argument('-weights',type=str,default='Contents/Dataset/weights.npy',help='weights for cross-entropy loss')
-    parser.add_argument('-ratio',type=float,default=0.7,help='ratio between train and test dataset')
+    parser.add_argument('-ratio',type=float,default=0.75,help='ratio between train and test dataset')
     parser.add_argument('-seed',type=int,default=1,help='seed value for dividing dataset')
     parser.add_argument('-device',type=int,default=0,help='device id')
-    parser.add_argument('-depth',type=int,default=3,help='depth of segnet model')
+    parser.add_argument('-depth',type=int,default=5,help='depth of segnet model')
     parser.add_argument('-filters',type=int,default=4,help='number of filters in first layer')
     parser.add_argument('-model',type=str,default='Output/unet_masked.model',help='path of segnet model')
-    parser.add_argument('-epochs',type=int,default=50,help='number of epochs')
+    parser.add_argument('-epochs',type=int,default=100,help='number of epochs')
     parser.add_argument('-batch',type=int,default=2,help='batch size')
-    parser.add_argument('-lr',type=float,default=0.01,help='learning rate')
+    parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
     args = parser.parse_args()
 
     images_loader = ImagesLoader(args.images)
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     if os.path.isfile(args.weights):
         weights = np.load(args.weights)
         weights = weights / np.sum(weights)
+        weights = 1 - weights
         print(weights)
     if os.path.isfile(args.model):
         model = torch.load(args.model).to(args.device)

@@ -1,9 +1,13 @@
 import torch
 import numpy as np
+from functions import loadingBar
 
 def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,callback=None,images_type=torch.FloatTensor,labels_type=torch.LongTensor):
     loss_sum=0
     for epoch in range(epochs):
+        count = 0
+        total = len(datalaoder)
+        loadingBar(count,total)
         total_loss = 0
         model.train()
         for images,labels in datalaoder:
@@ -23,7 +27,11 @@ def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,callback=Non
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+            count += 1
+            loadingBar(count,total)
             del images,labels,output
+        print()
         if callback is not None:
             callback(epoch+1,total_loss)
+        loss_sum += total_loss
     return loss_sum / epochs
