@@ -17,10 +17,9 @@ if __name__ == '__main__':
     parser.add_argument('-alpha',type=str,default='Contents/Dataset/Alpha/',help='alpha channel for images')
     parser.add_argument('-classes',type=str,default='Contents/Dataset/classes.txt',help='classes file')
     parser.add_argument('-device',type=int,default=0,help='device id')
-    parser.add_argument('-model',type=str,default='Output/unet_masked.model',help='path of segnet model')
-    parser.add_argument('-batch',type=int,default=8,help='batch size')
+    parser.add_argument('-model',type=str,default='Contents/Models/unet_masked.model',help='path of segnet model')
+    parser.add_argument('-batch',type=int,default=4,help='batch size')
     parser.add_argument('-output',type=str,default="Contents/Output/",help='output directory')
-
     args = parser.parse_args()
 
     if not os.path.exists(args.output):
@@ -34,7 +33,7 @@ if __name__ == '__main__':
     classes = getClasses(args.classes)
     model = torch.load(args.model)
     index = 0
-    def onTestBatch(output):
+    def onTestBatch(batch_id,features,output):
         global index
         output = torch.argmax(output,dim=1)
         output = matrices_to_images(output,classes,args.device)
@@ -42,6 +41,5 @@ if __name__ == '__main__':
             img = img.cpu().numpy()
             name = os.path.join(args.output,str(index).rjust(4,'0')+'.png')
             cv.imwrite(name,img)
-            print(name)
             index += 1
-    eval(model,loader,args.device,onTestBatch)
+    eval(model,loader,args.device,onBatch=onTestBatch)

@@ -96,3 +96,10 @@ def matrices_to_images(matrices_tensor,classes,device=0):
 def loadingBar(count=0,total=100,size=1):
     percent = float(count)/float(total)*100
     sys.stdout.write("\r" + str(int(count)).rjust(3,'0')+"/"+str(int(total)).rjust(3,'0') + ' [' + '='*int(percent/4)*size + ' '*(25-int(percent/4))*size + ']')
+
+def accuracy(ground,output):
+    with torch.no_grad():
+        size = 1
+        for length in ground.shape:
+            size *= length
+        return float(torch.sum(torch.eq(ground,output))) / float(size)

@@ -7,7 +7,7 @@ if __name__ == '__main__':
     from train import train
     from test import test
     from Models.UNet import UNet
-    from functions import getClasses
+    from functions import getClasses,accuracy
     from torch.utils.data import DataLoader
     from Loaders.ImagesLoader import ImagesLoader
     from Loaders.ImageConverter import ImageConverter
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('-device',type=int,default=0,help='device id')
     parser.add_argument('-depth',type=int,default=5,help='depth of segnet model')
     parser.add_argument('-filters',type=int,default=4,help='number of filters in first layer')
-    parser.add_argument('-model',type=str,default='Output/unet_masked.model',help='path of segnet model')
+    parser.add_argument('-model',type=str,default='Contents/Models/unet_masked.model',help='path of segnet model')
     parser.add_argument('-epochs',type=int,default=100,help='number of epochs')
     parser.add_argument('-batch',type=int,default=2,help='batch size')
     parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
@@ -64,19 +64,37 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(),args.lr)
     print("Training model...")
     
+    train_accuracy = 0
+    def onTrainBatch(batch_id,features,labels,output,loss):
+        global train_accuracy
+        output = torch.argmax(output,dim=1)
+        _accuracy = accuracy(labels,output)
+        train_accuracy = (train_accuracy * (batch_id - 1) + _accuracy) / batch_id
+
+    test_accuracy = 0
+    def onTestBatch(batch_id,features,labels,output,loss):
+        global test_accuracy
+        output = torch.argmax(output,dim=1)
+        _accuracy = accuracy(labels,output)
+        test_accuracy = (test_accuracy * (batch_id - 1) + _accuracy) / batch_id
+
     min_loss = float('inf')
     def onTrainEpoch(epoch,loss):
         global min_loss
-        print("Epoch #" + str(epoch) + " Train Loss: " + str(loss))
-        loss = test(model,test_loader,criterion,args.device)
-        print("Epoch #" + str(epoch) + " Test Loss: " + str(loss))
+        global train_accuracy
+        global test_accuracy
+        print("Epoch #" + str(epoch) + " Train Loss: " + str(loss) + "\tAccuracy: " + str(train_accuracy*100))
+        loss = test(model,test_loader,criterion,args.device,onBatch=onTestBatch)
+        print("Epoch #" + str(epoch) + " Test Loss: " + str(loss) + "\tAccuracy: " + str(test_accuracy*100))
+        train_accuracy = 0
+        test_accuracy = 0
         if loss < min_loss:
             print("Saving model...")
             torch.save(model,args.model)
             print("Model saved!")
             min_loss = loss
 
-    total_loss = train(model,train_loader,criterion,optimizer,args.epochs,args.device,onTrainEpoch)
+    total_loss = train(model,train_loader,criterion,optimizer,args.epochs,args.device,onBatch=onTrainBatch,onEpoch=onTrainEpoch)
     print("Training finished!")
     print("Average train loss: " + str(total_loss))
 
