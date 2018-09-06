@@ -1,7 +1,7 @@
 import torch
 from functions import loadingBar
 
-def test(model,dataloader,criterion,device=None,onBatch=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
+def test(model,dataloader,criterion,device=None,onBatch=None,features_transform=None,labels_transform=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
     batch_id = 0
     total = len(dataloader)
     loadingBar(batch_id,total)
@@ -9,6 +9,10 @@ def test(model,dataloader,criterion,device=None,onBatch=None,features_type=torch
     model.eval()
     with torch.no_grad():
         for features,labels in dataloader:
+            if features_transform is not None:
+                features = features_transform(features,device)
+            if labels_transform is not None:
+                labels = labels_transform(labels,device)
             if not torch.is_tensor(features):
                 features = features_type(features)
             else:
@@ -30,13 +34,15 @@ def test(model,dataloader,criterion,device=None,onBatch=None,features_type=torch
         print()
     return total_loss
 
-def eval(model,dataloader,device=None,onBatch=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
+def eval(model,dataloader,device=None,onBatch=None,features_transform=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
     batch_id = 0
     total = len(dataloader)
     loadingBar(batch_id,total)
     model.eval()
     with torch.no_grad():
         for features in dataloader:
+            if features_transform is not None:
+                features = features_transform(features,device)
             if not torch.is_tensor(features):
                 features = features_type(features)
             else:

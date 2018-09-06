@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from functions import loadingBar
 
-def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,onBatch=None,onEpoch=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
+def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,onBatch=None,onEpoch=None,features_transform=None,labels_transform=None,features_type=torch.FloatTensor,labels_type=torch.LongTensor):
     loss_sum=0
     for epoch in range(epochs):
         batch_id = 0
@@ -11,6 +11,10 @@ def train(model,datalaoder,criterion,optimizer,epochs=1,device=None,onBatch=None
         total_loss = 0
         model.train()
         for features,labels in datalaoder:
+            if features_transform is not None:
+                features = features_transform(features,device)
+            if labels_transform is not None:
+                labels = labels_transform(labels,device)
             if not torch.is_tensor(features):
                 features = features_type(features)
             else:
