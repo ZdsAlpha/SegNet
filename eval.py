@@ -3,9 +3,7 @@ if __name__ == '__main__':
     import torch
     import argparse
     import cv2 as cv
-    import numpy as np
     from test import eval
-    from Models.UNet import UNet
     from functions import getClasses
     from torch.utils.data import DataLoader
     from Loaders.ImagesLoader import ImagesLoader

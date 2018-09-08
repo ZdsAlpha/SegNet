@@ -89,8 +89,8 @@ class UNet(nn.Module):
         indices = []
         sizes = []
         for encoder in self.encoders:
-            sizes.append(x.size())
             x = encoder(x)
+            sizes.append(x.size())
             tensors.append(x)
             x,ind = F.max_pool2d(x,2,2,return_indices=True)
             indices.append(ind)
