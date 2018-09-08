@@ -113,7 +113,7 @@ class UNet(nn.Module):
         return self.decode((x,tensors,indices,sizes))
 
     def initialize(self):
-        for part in [self.encoders,self.decoders]:
+        for part in [self.encoders,self.center,self.decoders]:
             for layer in part:
                 for i in range(len(layer)):
                     if i%3==0:
