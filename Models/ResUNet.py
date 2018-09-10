@@ -4,7 +4,7 @@ import torchvision.models as models
 F = nn.functional
 
 class ResUNet(nn.Module):
-    def __init__(self,in_channels,out_channels,depth=3,filters=8,kernel_size=3,padding=1,resLayers=2,convPerRes=2):
+    def __init__(self,in_channels,out_channels,depth=3,filters=8,kernel_size=3,padding=1,resLayers=2,convPerRes=2,dense=True,dropout=False):
         super(ResUNet,self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -14,6 +14,8 @@ class ResUNet(nn.Module):
         self.padding = padding
         self.resLayers = resLayers
         self.convPerRes = convPerRes
+        self.dense = dense
+        self.dropout = dropout
 
         encoders = []
         decoders = []
@@ -34,7 +36,7 @@ class ResUNet(nn.Module):
         self.encoders = nn.Sequential(*encoders)
         self.center = center
         self.decoders = nn.Sequential(*decoders)
-        self.final = final 
+        self.final = final
 
     def calculateFilters(self,depth):
         return self.filters * (2 ** depth)
@@ -84,13 +86,23 @@ class ResUNet(nn.Module):
         sizes = []
         for encoder in self.encoders:
             x = F.leaky_relu(encoder[0](x))
-            last = None
+            if self.dense:
+                last = []
+            else:
+                last = None
             for res in encoder[1]:
-                last = x
+                if self.dense:
+                    last.append(x)
+                else:
+                    last = x
                 for conv in range(len(res)):
                     if conv == len(res) - 1:
                         x = res[conv](x)
-                        x = x + last
+                        if self.dense:
+                            for tensor in reversed(last):
+                                x = x + tensor
+                        else:
+                            x = x + last
                         x = F.leaky_relu(x)
                     else:
                         x = F.leaky_relu(res[conv](x))
@@ -102,20 +114,33 @@ class ResUNet(nn.Module):
 
     def decode(self,x):
         x,tensors,indices,sizes = x
-        for decoder in self.decoders:
+        for decoder_id in range(len(self.decoders)):
+            decoder = self.decoders[decoder_id]
+            if decoder_id == len(self.decoders) - 1 and self.dropout and self.training:
+                x = F.dropout(x)
             tensor = tensors.pop(len(indices)-1)
             size = sizes.pop(len(indices)-1)
             ind = indices.pop(len(indices)-1)
             x = F.max_unpool2d(x,ind,2,2,output_size=size)
             x = torch.cat([tensor,x],dim=1)
             x = F.leaky_relu(decoder[0](x))
-            last = None
+            if self.dense:
+                last = []
+            else:
+                last = None
             for res in decoder[1]:
-                last = x
+                if self.dense:
+                    last.append(x)
+                else:
+                    last = x
                 for conv in range(len(res)):
                     if conv == len(res) - 1:
                         x = res[conv](x)
-                        x = x + last
+                        if self.dense:
+                            for tensor in reversed(last):
+                                x = x + tensor
+                        else:
+                            x = x + last
                         x = F.leaky_relu(x)
                     else:
                         x = F.leaky_relu(res[conv](x))
@@ -124,9 +149,10 @@ class ResUNet(nn.Module):
     
     def forward(self,x):
         x,tensors,indices,sizes = self.encode(x)
-        x = self.center(x)
+        for layer in self.center:
+            x = F.leaky_relu(layer(x))
         x = self.decode((x,tensors,indices,sizes))
-        return self.final(x)
+        return F.softmax(self.final(x),dim=1)
 
     def initialize(self):
         for encoder in self.encoders:

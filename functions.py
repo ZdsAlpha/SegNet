@@ -103,3 +103,12 @@ def accuracy(ground,output):
         for length in ground.shape:
             size *= length
         return float(torch.sum(torch.eq(ground,output))) / float(size)
+
+def confusion_matrix(ground,prediction,classes):
+    rows = []
+    for g in range(classes):
+        column = []
+        for p in range(classes):
+            column.append(torch.eq(ground,g) and torch.eq(prediction,p))
+        rows.append(torch.stack(column))
+    return torch.stack(rows)

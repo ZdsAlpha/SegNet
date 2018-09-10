@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('-alpha',type=str,default='Contents/Dataset/Alpha/',help='alpha channel for images')
     parser.add_argument('-classes',type=str,default='Contents/Dataset/classes.txt',help='classes file')
     parser.add_argument('-device',type=int,default=0,help='device id')
-    parser.add_argument('-model',type=str,default='Contents/Models/munet.model',help='path of segnet model')
+    parser.add_argument('-model',type=str,default='Contents/Models/resnet.model',help='path of segnet model')
     parser.add_argument('-batch',type=int,default=4,help='batch size')
     parser.add_argument('-output',type=str,default="Contents/Output/",help='output directory')
     args = parser.parse_args()
