@@ -97,18 +97,31 @@ def loadingBar(count=0,total=100,size=1):
     percent = float(count)/float(total)*100
     sys.stdout.write("\r" + str(int(count)).rjust(3,'0')+"/"+str(int(total)).rjust(3,'0') + ' [' + '='*int(percent/4)*size + ' '*(25-int(percent/4))*size + ']')
 
-def accuracy(ground,output):
-    with torch.no_grad():
-        size = 1
-        for length in ground.shape:
-            size *= length
-        return float(torch.sum(torch.eq(ground,output))) / float(size)
-
 def confusion_matrix(ground,prediction,classes):
     rows = []
     for g in range(classes):
-        column = []
+        columns = []
         for p in range(classes):
-            column.append(torch.eq(ground,g) and torch.eq(prediction,p))
-        rows.append(torch.stack(column))
-    return torch.stack(rows)
+            _ground = torch.eq(ground,float(g))
+            _prediction = torch.eq(prediction,float(p))
+            _product = torch.mul(_ground,_prediction)
+            columns.append(torch.sum(_product))
+        rows.append(torch.stack(columns))
+    return torch.stack(rows).cpu().numpy()
+
+def precision(matrix):
+    classes, classes = matrix.shape
+    out = []
+    for class_id in range(classes):
+        out.append(matrix[class_id,class_id] / np.sum(matrix[class_id,:]))
+    return np.stack(out)
+
+def recall(matrix):
+    classes,classes = matrix.shape
+    out = []
+    for class_id in range(classes):
+        out.append(matrix[class_id,class_id] / np.sum(matrix[:,class_id]))
+    return np.stack(out)
+
+def f1(p,r):
+    return 2 * (p * r) / (p + r)

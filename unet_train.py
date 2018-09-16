@@ -6,7 +6,7 @@ if __name__ == '__main__':
     import numpy as np
     from train import train
     from test import test
-    from Models.ResUNet import ResUNet
+    from Models.UNet import UNet
     from functions import getClasses,confusion_matrix,precision,recall,f1
     from torch.utils.data import DataLoader
     from Loaders.ImagesLoader import ImagesLoader
@@ -22,15 +22,15 @@ if __name__ == '__main__':
     parser.add_argument('-masks',type=str,default='Contents/Dataset/Masks/',help='masks directory')
     parser.add_argument('-classes',type=str,default='Contents/Dataset/classes.txt',help='classes file')
     parser.add_argument('-weights',type=str,default='Contents/Dataset/weights.npy',help='weights for cross-entropy loss')
-    parser.add_argument('-ratio',type=float,default=0.80,help='ratio between train and test dataset')
+    parser.add_argument('-ratio',type=float,default=0.75,help='ratio between train and test dataset')
     parser.add_argument('-seed',type=int,default=1,help='seed value for dividing dataset')
     parser.add_argument('-device',type=int,default=0,help='device id')
-    parser.add_argument('-depth',type=int,default=4,help='depth of resunet model')
+    parser.add_argument('-depth',type=int,default=5,help='depth of unet model')
     parser.add_argument('-filters',type=int,default=4,help='number of filters in first layer')
-    parser.add_argument('-reslayers',type=int,default=2,help='number of res layers per encoder/decoder')
-    parser.add_argument('-convperres',type=int,default=1,help='number of conv layers per res layer')
-    parser.add_argument('-model',type=str,default='Contents/Models/resunet.model',help='path of model')
-    parser.add_argument('-epochs',type=int,default=50,help='number of epochs')
+    parser.add_argument('-convperlayer',type=int,default=2,help='number of conv layers per encoder/decoder')
+    parser.add_argument('-dropout',type=float,default=0,help='dropout rate')
+    parser.add_argument('-model',type=str,default='Contents/Models/unet.model',help='path of model')
+    parser.add_argument('-epochs',type=int,default=100,help='number of epochs')
     parser.add_argument('-batch',type=int,default=2,help='batch size')
     parser.add_argument('-lr',type=float,default=0.001,help='learning rate')
     args = parser.parse_args()
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     train_loader,test_loader = divide_dataset(loader,ratio=args.ratio,seed=args.seed)
     train_loader = DataLoader(train_loader,args.batch,True,num_workers=4)
     test_loader = DataLoader(test_loader,args.batch,False,num_workers=4)
+
     classes = getClasses(args.classes)
     weights = None
     loaded = False
@@ -58,7 +59,7 @@ if __name__ == '__main__':
         print("Model loaded!")
         loaded = True
     else:
-        model = ResUNet(4,len(classes),args.depth,args.filters,resLayers=args.reslayers,convPerRes=args.convperres,dropout=True).to(args.device)
+        model = UNet(4,len(classes),args.depth,args.filters,convPerLayer=args.convperlayer,dropout=args.dropout).to(args.device)
         model.initialize()
         print("Model initialized!")
     if weights is None:
@@ -68,19 +69,17 @@ if __name__ == '__main__':
         criterion = torch.nn.CrossEntropyLoss(weight=weights).to(args.device)
     optimizer = torch.optim.Adam(model.parameters(),args.lr)
 
-    def print_score(matrix,classes,points=8):
-        def to_str(num):
-            return ("%."+str(points)+"f") % round(float(num),points)
+    def print_matrix(matrix,classes):
         p = precision(matrix)
         r = recall(matrix)
         f = f1(p,r)
         table = BeautifulTable()
         table.column_headers = ["Class Name","Precision","Recall","F1 Score"]
         for i in range(len(classes)):
-            table.append_row([classes[i][0],to_str(p[i]),to_str(r[i]),to_str(f[i])])
+            table.append_row([classes[i][0],p[i],r[i],f[i]])
         print(table)
         total_f1 = np.sum(f) / len(f)
-        print("Total F1 score: " + to_str(total_f1))
+        print("Total F1 score: " + str(total_f1))
         return total_f1
 
     train_matrix = np.zeros((len(classes),len(classes)),dtype=np.int32)
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     print("Testing model...")
     loss = test(model,test_loader,criterion,args.device,onBatch=onTestBatch)
     print("Loss: " + str(loss))
-    _score = print_score(test_matrix,classes)
+    _score = print_matrix(test_matrix,classes)
     if loaded:
         score = _score
     test_matrix = np.zeros((len(classes),len(classes)))
@@ -112,10 +111,10 @@ if __name__ == '__main__':
         global train_matrix
         global test_matrix
         print("Epoch #" + str(epoch) + " - Train Loss: " + str(loss))
-        trian_score = print_score(train_matrix,classes)
+        trian_score = print_matrix(train_matrix,classes)
         loss = test(model,test_loader,criterion,args.device,onBatch=onTestBatch)
         print("Epoch #" + str(epoch) + " - Test Loss: " + str(loss))
-        test_score = print_score(test_matrix,classes)
+        test_score = print_matrix(test_matrix,classes)
         train_matrix = np.zeros((len(classes),len(classes)))
         test_matrix = np.zeros((len(classes),len(classes)))
         if test_score > score:
